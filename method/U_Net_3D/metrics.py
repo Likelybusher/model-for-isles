@@ -25,7 +25,10 @@ def cross_entropy_loss(y_true, y_pred, sample_weight=None):
     if sample_weight is not None:
         # ce = mean(weight * y_true * log(y_pred)).
         y_true = y_true * sample_weight
-    return tf.keras.losses.BinaryCrossentropy()(y_true, y_pred)
+    # for tf version 1.9.0
+    return tf.reduce_mean(tf.keras.losses.categorical_crossentropy(y_true, y_pred))
+    # for tf version 1.13.0
+    # return tf.keras.losses.BinaryCrossentropy()(y_true, y_pred)
 
 
 def cross_entropy_loss_with_weight(y_true, y_pred, sample_weight_per_c=None, eps=1e-6):
@@ -61,6 +64,7 @@ def dice_coef_loss(y_true, y_pred):
 
 def test_metric(func, y_true, y_pred, feed_dict, weight=None):
     with tf.Session() as sess:
+        # print(sess.run(..., feed_dict=feed_dict))
         print(sess.run(func(y_true, y_pred, weight), feed_dict=feed_dict))
 
 
@@ -69,16 +73,16 @@ def test():
     y_true = tf.placeholder(dtype=tf.uint8, shape=(None, ))
     y_pred = tf.placeholder(dtype=tf.float32, shape=(None, 2))
     weight = tf.placeholder(dtype=tf.float32, shape=(2, ))
-    y_true_batch = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 0])
-    y_pred_batch = np.array([[0.1, 0.9], [0.2, 0.8], [0, 1], [0, 1], [0, 1],
+    y_true_batch = np.array([1, 1, 1, 1, 0])
+    y_pred_batch = np.array([
                              [0.1, 0.9], [0.2, 0.8], [0.1, 0.9], [0.2, 0.8], [0.9, 0.1]])
 
     feed_dict = {y_true: y_true_batch, y_pred: y_pred_batch}
     test_metric(cross_entropy_loss, y_true, y_pred, feed_dict)
     test_metric(cross_entropy_loss_v1, y_true, y_pred, feed_dict)
-    test_metric(cross_entropy_loss_with_weight, y_true, y_pred, feed_dict)
-    feed_dict[weight] = [5, 1/2]
-    test_metric(cross_entropy_loss_with_weight, y_true, y_pred, feed_dict, weight)
+    # test_metric(cross_entropy_loss_with_weight, y_true, y_pred, feed_dict)
+    # feed_dict[weight] = [5, 1/2]
+    # test_metric(cross_entropy_loss_with_weight, y_true, y_pred, feed_dict, weight)
 
 
 if __name__ == '__main__':
